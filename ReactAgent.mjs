@@ -16,8 +16,6 @@ const openai = new OpenAI({
    baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
 })
 
-const rl = readline.createInterface({ input, output })
-
 let currentDir = process.cwd()
 //? Loading & Intiallizing Done
 
@@ -125,10 +123,13 @@ function fileContains(filePath, searchText) {
 
 //* logStep() – For clearly describing each step an AI is performing
 function logStep(description) {
+   console.log('\n')
+
    console.log(
-      chalk.bgCyanBright.black(`🔧 Step:`),
+      '🔧 ' + chalk.bgCyanBright.black(` Step: `),
       chalk.bold.cyan(description)
    )
+   // console.log('\n')
 }
 
 //*🔍 parseShellErrors() – Extract common error patterns from stderr (AI could use this for debugging)
@@ -402,9 +403,11 @@ async function executeTask(task) {
 // `
 
 const system_prompt = `
-You are an Expert React Developer.
+You are an Expert Developer.
 
 Your working methodology follows 4 main steps: Analyze, Convert, Action, Output.
+
+
 
 ---
 
@@ -434,9 +437,9 @@ Your working methodology follows 4 main steps: Analyze, Convert, Action, Output.
   - \`fInput\`: The input or command to run
   - \`fContent\` (optional): Extra content if needed (e.g., file content)
 
- - - After **every step**, include a separate \`executeTask\` with:
+ - - Before **every step**, include a separate \`executeTask\` with:
   - \`fType: "log"\`
-  - \`fInput\`: A short description of what the previous step just did (e.g., "Installed Tailwind packages", "Navigated into project directory")
+  - \`fInput\`: A short description of what the next step will do (e.g., "Installing Tailwind packages", "Navigating into project directory")
 
 
 
@@ -489,6 +492,9 @@ Your working methodology follows 4 main steps: Analyze, Convert, Action, Output.
 3. Wait for each step to complete before moving on.
 4. All 4 steps must be completed in every response.
 5. Output should always be valid JSON.
+6. - Before Each Step, include a separate \`executeTask\` with:
+  - \`fType: "log"\`
+  - \`fInput\`: A short description of what the next step will do (e.g., "Analyzing the user query, "Converting the user query into a actionable steps", "Installing Tailwind Css").
 
 ---
 
@@ -526,7 +532,7 @@ UserQuery: "Create a react app using Vite and install Tailwind CSS"
 3. **Action**
 
 \`\`\`json
-{ "step": "action", "function": "executeTask", "fType": "shell", "fInput": "npm create vite@latest my-app -- --template react", "fContent": "" }
+{ "step": "action", "function": "executeTask", "fType": "shell", "fInput": "npm create vite@latest "appropriate-project-name" -- --template react", "fContent": "" }
 { "step": "action", "function": "executeTask", "fType": "cd", "fInput": "my-app", "fContent": "" }
 { "step": "action", "function": "executeTask", "fType": "shell", "fInput": "npm install", "fContent": "" }
 { "step": "action", "function": "executeTask", "fType": "shell", "fInput": "npm install -D tailwindcss postcss autoprefixer", "fContent": "" }
@@ -548,71 +554,82 @@ UserQuery: "Create a react app using Vite and install Tailwind CSS"
 `
 
 const message = [{ role: 'system', content: system_prompt }]
-const prompt = await rl.question(
-   chalk.bold.bgYellowBright.black(
-      '>> Enter Prompt to Generate/Edit Component / Type "exit" to exit the loop : '
-   )
-)
-if (prompt === 'exit') {
-   console.log(
-      chalk.bold.yellowBright.black(
-         'Thanks for using React Buddy! See You SOON ✌️'
-      )
-   )
-   rl.close()
-}
-message.push({ role: 'user', content: prompt })
 
 while (true) {
-   const response = await openai.chat.completions.create({
-      model: 'gemini-2.0-flash',
-      response_format: { type: 'json_object' },
-      messages: message,
-   })
+   try {
+      const rl = readline.createInterface({ input, output })
+      const prompt = await rl.question(
+         chalk.bold.bgYellowBright.black(
+            '>> Enter Prompt to Generate/Edit OR Type "exit" to exit the loop : '
+         )
+      )
+      rl.close()
 
-   const parsed_result = JSON.parse(response.choices[0].message.content)
+      if (prompt === 'exit') {
+         console.log(
+            chalk.bold.bgMagentaBright.black(
+               '\nThanks for using Agent Buddy! See You Later '
+            ) + '✌️'
+         )
+         console.log('\n')
+         rl.close()
+         break
+      }
+      message.push({ role: 'user', content: prompt })
+   } catch (error) {
+      console.log('❌ ERROR in outer loop:', error)
+   }
 
-   if (parsed_result.step === 'analyze') {
-      // console.log('⏩ Analyze :', parsed_result)
-      message.push({
-         role: 'assistant',
-         content: JSON.stringify(parsed_result),
+   while (true) {
+      const response = await openai.chat.completions.create({
+         model: 'gemini-2.0-flash',
+         response_format: { type: 'json_object' },
+         messages: message,
       })
-   }
 
-   if (parsed_result.step === 'convert') {
-      // console.log('⏩ Convert :', parsed_result)
-      message.push({
-         role: 'assistant',
-         content: JSON.stringify(parsed_result),
-      })
-   }
+      const parsed_result = JSON.parse(response.choices[0].message.content)
 
-   if (parsed_result.step === 'output') {
-      console.log('✅ Output :', parsed_result)
-      break
-   }
-
-   if (parsed_result.step === 'action') {
-      // console.log('⚙️ Action: ', parsed_result)
-
-      const { fType, fInput, fContent } = parsed_result
-
-      if (fType && fInput !== undefined) {
-         await executeTask({
-            type: fType,
-            input: fInput,
-            content: fContent || '',
+      if (parsed_result.step === 'analyze') {
+         // console.log('⏩ Analyze :', parsed_result)
+         message.push({
+            role: 'assistant',
+            content: JSON.stringify(parsed_result),
          })
-      } else {
-         console.warn('Missing fType or fInput in action step!')
       }
 
-      message.push({
-         role: 'assistant',
-         content: JSON.stringify(parsed_result),
-      })
+      if (parsed_result.step === 'convert') {
+         // console.log('⏩ Convert :', parsed_result)
+         message.push({
+            role: 'assistant',
+            content: JSON.stringify(parsed_result),
+         })
+      }
+
+      if (parsed_result.step === 'output') {
+         console.log('✅ Output :\n', parsed_result)
+         console.log('\n')
+         break
+      }
+
+      if (parsed_result.step === 'action') {
+         // console.log('⚙️ Action: ', parsed_result)
+
+         const { fType, fInput, fContent } = parsed_result
+
+         if (fType && fInput !== undefined) {
+            await executeTask({
+               type: fType,
+               input: fInput,
+               content: fContent || '',
+            })
+         } else {
+            console.warn('Missing fType or fInput in action step!')
+         }
+
+         message.push({
+            role: 'assistant',
+            content: JSON.stringify(parsed_result),
+         })
+      }
    }
 }
-
-rl.close()
