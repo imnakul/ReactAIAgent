@@ -447,26 +447,9 @@ async function Main(message) {
    }
 
    async function promptStateChecker(state) {
-      // console.log('statResykt', state.resultS)
-      // console.log('Entered promptStateChecker')
+  
       console.log('🤖 Prompt State Checker :', state.stepS)
-      // let currState
-      // if (state.stepS === 'exit') {
-      //    currState = 'exit'
-      // }
-      // if (state.stepS === 'analyze') {
-      //    currState = 'analyze'
-      // }
-      // if (state.stepS === 'convert') {
-      //    currState = 'convert'
-      // }
-      // if (state.stepS === 'output') {
-      //    currState = 'output'
-      // }
-      // if (state.stepS === 'action') {
-      //    currState = 'action'
-      // }
-      // console.log('currState', currState)
+      
       return state.stepS
    }
 
@@ -476,11 +459,7 @@ async function Main(message) {
       return state
    }
 
-   // //? Dummy Node
-   // const routerNode = async (state) => {
-   //    console.log('🔀 Routing...')
-   //    return state
-   // }
+   
 
    async function geminiCall(state) {
       console.log('🔀 Calling Gemini...')
@@ -545,89 +524,3 @@ async function Main(message) {
 }
 
 traceable(Main(message))
-
-// traceable(Main(message))
-
-// async function main(message) {
-//    while (true) {
-//       try {
-//          const rl = readline.createInterface({ input, output })
-//          const prompt = await rl.question(
-//             chalk.bold.bgYellowBright.black(
-//                '>> Enter Prompt to Generate/Edit OR Type "exit" to exit the loop : '
-//             )
-//          )
-//          rl.close()
-
-//          if (prompt === 'exit') {
-//             // console.log(
-//             //    chalk.bold.bgMagentaBright.black(
-//             //       '\nThanks for using Agent Buddy! See You Later '
-//             //    ) + '✌️'
-//             // )
-//             // console.log('\n')
-//             exit()
-//             rl.close()
-//             break
-//          }
-//          message.push({ role: 'user', content: prompt })
-//       } catch (error) {
-//          console.log('❌ ERROR in outer loop:', error)
-//       }
-
-//       while (true) {
-//          const response = await openai.chat.completions.create({
-//             model: 'gemini-2.0-flash',
-//             response_format: { type: 'json_object' },
-//             messages: message,
-//          })
-
-//          const parsed_result = JSON.parse(response.choices[0].message.content)
-
-//          if (parsed_result.step === 'analyze') {
-//             // console.log('⏩ Analyze :', parsed_result)
-//             message.push({
-//                role: 'assistant',
-//                content: JSON.stringify(parsed_result),
-//             })
-//          }
-
-//          if (parsed_result.step === 'convert') {
-//             // console.log('⏩ Convert :', parsed_result)
-//             message.push({
-//                role: 'assistant',
-//                content: JSON.stringify(parsed_result),
-//             })
-//          }
-
-//          if (parsed_result.step === 'output') {
-//             console.log('✅ Output :\n', parsed_result)
-//             console.log('\n')
-//             break
-//          }
-
-//          if (parsed_result.step === 'action') {
-//             // console.log('⚙️ Action: ', parsed_result)
-
-//             const { fType, fInput, fContent } = parsed_result
-
-//             if (fType && fInput !== undefined) {
-//                await executeTask({
-//                   type: fType,
-//                   input: fInput,
-//                   content: fContent || '',
-//                })
-//             } else {
-//                console.warn('Missing fType or fInput in action step!')
-//             }
-
-//             message.push({
-//                role: 'assistant',
-//                content: JSON.stringify(parsed_result),
-//             })
-//          }
-//       }
-//    }
-// }
-
-// traceable(main(message))
